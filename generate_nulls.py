@@ -2,8 +2,9 @@ import numpy as np
 import bct
 
 from lin_gen_model import Subject, GroupLevelModel
-from data_manager import check_paths
-    
+from inout import check_paths
+from constants import TUMOR_SUBJECT_IDS
+
 
 class GenerateNulls(GroupLevelModel):
     """
@@ -16,7 +17,7 @@ class GenerateNulls(GroupLevelModel):
         self.fc_nulls_path = self.output_path + 'fc_nulls/'
         self.rule_nulls_path = self.output_path + 'rule_nulls/'
         self.num_nulls = num_nulls
-    
+
     def fc_randomization(self, subject_id, subject_ids_dict):
         """
         Randomizes the FC matrix for the given subject id. Creates 100 of these
@@ -77,7 +78,7 @@ class GenerateNulls(GroupLevelModel):
 
         # Iterate over each over each of the null numbers
         for null_num in range(self.num_nulls):
-            # Instantiate two lists to hold the fc nulls of the null number for every subject 
+            # Instantiate two lists to hold the fc nulls of the null number for every subject
             fc_nulls_to_stack = []
 
             # Add the fc null for each null num to the list to then stack.
@@ -89,23 +90,17 @@ class GenerateNulls(GroupLevelModel):
 
             # Train the null rule set for the null_num.
             flat_null_rules = np.linalg.pinv(self.K_stack) @ fc_nulls_stack
-            null_rules = self.inverse_symmetric_modification(flat_null_rules, mat_size=np.shape(self.subjects[1].sc_matrix))
+            null_rules = self.inverse_symmetric_modification(flat_null_rules, mat_size=np.shape(self.subjects[0].sc_matrix))
 
             # Write the results to text file.
             np.savetxt(null_rules_path + f'gl_rule_nulls_{null_num}', null_rules)
-            
+
 def main(pre_resection):
-    # Define the output directory
+    path = 'pre_resection/' if pre_resection else 'post_resection/'
 
-    ####################### TEMPORARY CODE #########################################
-    if pre_resection:
-        path = 'pre_resection/'
-    else:
-        path = 'post_resection/'
-    ########################## TEMPORARY CODE ######################################
-
-    # Define the ids for the subjects 
-    subject_ids_dict = dict(zip([1, 2, 3, 5, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 31], list(range(25))))
+    # Subject IDs of the 25 tumor-dataset participants; IDs are non-contiguous
+    # because some subjects were excluded from analysis.
+    subject_ids_dict = dict(zip(TUMOR_SUBJECT_IDS, range(len(TUMOR_SUBJECT_IDS))))
 
     # Instantiate the GenerateNulls object to generate the null rules.
     null_generator = GenerateNulls(subject_ids_dict.keys(), 100, path, tumor_ds=True, pre_resection=True)

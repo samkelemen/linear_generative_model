@@ -2,7 +2,6 @@
 Contains the functions to train the model.
 """
 from collections.abc import Callable
-from typing import Any
 import math
 import cupy as cp
 import numpy as np
@@ -48,9 +47,8 @@ def calc_next_alpha(alpha1: float, alpha2: float) -> tuple[float, float]:
 
 def lasso_regression(X: cp.ndarray, y: cp.ndarray, alpha: float, tol: float=0.000000000000000001, max_iter: int=200) -> cp.ndarray:
     """
-    Fits a Lasso regression model using scikit-learn's Lasso function.
+    Fits a Lasso regression model using cuML's Lasso.
     """
-    # Fit a Lasso model using scikit-learn's Lasso function
     lasso_model = Lasso(alpha=alpha, fit_intercept=False, tol=tol, max_iter=max_iter)
     lasso_model.fit(X, y)
 
@@ -62,8 +60,6 @@ def binary_search_train(X: cp.ndarray, y: cp.ndarray, max_iter=10) -> tuple[cp.n
     Performs a binary search to find the optimal alpha value for Lasso regression,
     which results in ~80% nonzero rule coefficients.
     """
-    #small_alpha = calc_alpha_max(X, y) * 0.00001#small_alpha = calc_alpha_max(X, y) * 0.00015
-    #big_alpha = small_alpha * 10#big_alpha = small_alpha * 4
     small_alpha = calc_alpha_max(X, y) * 0.00004
     big_alpha = small_alpha * 10
 
@@ -98,7 +94,7 @@ class Subject:
         """
         Make prediction for the subject with the given rules.
         """
-        return self.sc @ rules @ self.sc
+        return self.transformed_sc @ rules @ self.transformed_sc
 
 class GroupLevelModel:
     """
@@ -119,7 +115,7 @@ class GroupLevelModel:
         """
         transformed_scs = [subject.transformed_sc for subject in self.subjects]
         transformed_fcs = [subject.transformed_fc for subject in self.subjects]
-        
+
         transformed_sc_stack = np.vstack(transformed_scs)
         transformed_fc_stack = np.hstack(transformed_fcs)
         return transformed_sc_stack, transformed_fc_stack
