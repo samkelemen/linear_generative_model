@@ -1,9 +1,15 @@
 """
 Contains functions for modifying symmetric matrices.
 """
+
 import cupy as cp
 
-def symmetric_modification(X: cp.ndarray, B: cp.ndarray, to_del_path: str=None):
+
+def symmetric_modification(
+    X: cp.ndarray,
+    B: cp.ndarray,
+    to_del_path: str | None = None,
+):
     """
     Modifies X and B tAdecrease their dimensionality, without
     altering the result of fiting the model, B = XOX.
@@ -23,7 +29,7 @@ def symmetric_modification(X: cp.ndarray, B: cp.ndarray, to_del_path: str=None):
         dim_X = cp.shape(X)[0]
 
         computed_cols = []
-        for col in range(dim_X ** 2):
+        for col in range(dim_X**2):
             # Computes the row and col to delete from X and B
             curr_col = (col) // dim_X
             curr_row = (col) % dim_X
@@ -41,16 +47,17 @@ def symmetric_modification(X: cp.ndarray, B: cp.ndarray, to_del_path: str=None):
                 # Mark the column as computed.
                 computed_cols.append(col)
     else:
-        with open(to_del_path, mode="r", encoding='utf8') as to_del_file:
-            to_del = [int(index) for index in to_del_file]  
+        with open(to_del_path, mode="r", encoding="utf8") as to_del_file:
+            to_del = [int(index) for index in to_del_file]
 
     # Deletes the duplicate rows in kron(X, X).
     kron_X = cp.delete(cp.delete(kron_X, to_del, 1), to_del, 0)
-    # Deletes the duplicate columns in vec(b)        
+    # Deletes the duplicate columns in vec(b)
     vec_B = cp.delete(vec_B, to_del)
 
     # Returns the modified kron(X, X) and vec(b).
     return kron_X, vec_B
+
 
 def inverse_symmetric_modification(vec_A: cp.ndarray, orig_dim: int):
     """Applies the inverse funciton of symmetric modification to vec(A)."""
@@ -69,7 +76,7 @@ def inverse_symmetric_modification(vec_A: cp.ndarray, orig_dim: int):
         row = (indx) % orig_dim
         indices_2d.append([col, row])
 
-    for (indx, indx_2d) in enumerate(indices_2d):
+    for indx, indx_2d in enumerate(indices_2d):
         A[indx_2d[0], indx_2d[1]] = vec_A[indx]
 
     A_complement = cp.copy(A.T)

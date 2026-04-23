@@ -1,11 +1,9 @@
 """
 Contains the functions to train the model.
 """
-from collections.abc import Callable
-from typing import Any
+
 import math
 import cupy as cp
-import numpy as np
 from cuml.linear_model import Lasso
 
 
@@ -28,6 +26,7 @@ def calc_alpha_max(X: cp.ndarray, y: cp.ndarray) -> float:
     alpha_max = cp.max(products) / N
     return alpha_max
 
+
 def calc_alpha_grid(X: cp.ndarray, y: cp.ndarray, num_alphas: int = 100) -> list[float]:
     """
     Computes a grid of alpha values between 0 and alpha_max.
@@ -35,9 +34,12 @@ def calc_alpha_grid(X: cp.ndarray, y: cp.ndarray, num_alphas: int = 100) -> list
     alpha_max = calc_alpha_max(X, y)
     alpha_min = 0.00005 * alpha_max
     alpha_max = 100 * alpha_min
-    return cp.logspace(math.log(alpha_min), math.log(alpha_max), num=num_alphas, base=math.exp(1))
+    return cp.logspace(
+        math.log(alpha_min), math.log(alpha_max), num=num_alphas, base=math.exp(1)
+    )
 
-def calc_next_alpha(alpha1: float, alpha2: float) -> tuple[float, float]:
+
+def calc_next_alpha(alpha1: float, alpha2: float) -> float:
     """
     Calculates the midpoint between two alpha values, on natural log scale.
     """
@@ -46,7 +48,14 @@ def calc_next_alpha(alpha1: float, alpha2: float) -> tuple[float, float]:
     alpha_next = (alpha1 + alpha2) / 2
     return math.exp(alpha_next)
 
-def lasso_regression(X: cp.ndarray, y: cp.ndarray, alpha: float, tol: float=0.000000000000000001, max_iter: int=200) -> cp.ndarray:
+
+def lasso_regression(
+    X: cp.ndarray,
+    y: cp.ndarray,
+    alpha: float,
+    tol: float = 0.000000000000000001,
+    max_iter: int = 200,
+) -> cp.ndarray:
     """
     Fits a Lasso regression model using scikit-learn's Lasso function.
     """
@@ -57,15 +66,20 @@ def lasso_regression(X: cp.ndarray, y: cp.ndarray, alpha: float, tol: float=0.00
     # Return the fitted coefficients
     return lasso_model.coef_
 
-def binary_search_train(X: cp.ndarray, y: cp.ndarray, max_iter=10) -> tuple[cp.ndarray, float]:
+
+def binary_search_train(
+    X: cp.ndarray, y: cp.ndarray, max_iter=10
+) -> tuple[cp.ndarray, float]:
     """
     Performs a binary search to find the optimal alpha value for Lasso regression,
     which results in ~80% nonzero rule coefficients.
     """
-    #small_alpha = calc_alpha_max(X, y) * 0.00001#small_alpha = calc_alpha_max(X, y) * 0.00015
-    #big_alpha = small_alpha * 10#big_alpha = small_alpha * 4
+    # small_alpha = calc_alpha_max(X, y) * 0.00001#small_alpha = calc_alpha_max(X, y) * 0.00015
+    # big_alpha = small_alpha * 10#big_alpha = small_alpha * 4
     small_alpha = calc_alpha_max(X, y) * 0.00004
     big_alpha = small_alpha * 10
+    mid_alpha = calc_next_alpha(small_alpha, big_alpha)
+    rules: cp.ndarray = None
 
     for _ in range(max_iter):
         mid_alpha = calc_next_alpha(small_alpha, big_alpha)
@@ -86,47 +100,3 @@ def binary_search_train(X: cp.ndarray, y: cp.ndarray, max_iter=10) -> tuple[cp.n
 
     return rules, mid_alpha
 
-class Subject:
-    """
-    Represents a single subject.
-    """
-    def __init__(self, subject_id: int, sc: cp.ndarray, fc: cp.ndarray, transform: Callable[[cp.ndarray, cp.ndarray], cp.ndarray]) -> None:
-        self.subject_id = subject_id
-        self.transformed_sc, self.transformed_fc = transform(sc, fc)
-
-    def calc_predicted_fc(self, rules: cp.ndarray) -> cp.ndarray:
-        """
-        Make prediction for the subject with the given rules.
-        """
-        return self.sc @ rules @ self.sc
-
-class GroupLevelModel:
-    """
-    Represents a group of subjects.
-    """
-    def __init__(self, subjects: list[Subject]) -> None:
-        self.subjects = subjects
-
-    def _algebraic_linear_regression(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """
-        Fits a linear regression model using algebraic linear regression.
-        """
-        return np.linalg.pinv(X) @ y
-
-    def _preprocess_data(self) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Preprocess the data for training.
-        """
-        transformed_scs = [subject.transformed_sc for subject in self.subjects]
-        transformed_fcs = [subject.transformed_fc for subject in self.subjects]
-        
-        transformed_sc_stack = np.vstack(transformed_scs)
-        transformed_fc_stack = np.hstack(transformed_fcs)
-        return transformed_sc_stack, transformed_fc_stack
-
-    def fit(self, algebraic=False) -> np.ndarray:
-        """
-        Train the group model with algebraic linear regression.
-        """
-        transformed_sc_stack, transformed_fc_stack = self._preprocess_data()
-        return self._algebraic_linear_regression(transformed_sc_stack, transformed_fc_stack)
