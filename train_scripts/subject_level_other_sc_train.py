@@ -37,10 +37,11 @@ def train_subject(subject_id):
     print()
 
 
-for subject_id in range(1, 51):
-    train_subject(subject_id)
+if __name__ == "__main__":
+    for subject_id in range(1, 51):
+        train_subject(subject_id)
 
-    cp.get_default_memory_pool().free_all_blocks()
-    cp.get_default_pinned_memory_pool().free_all_blocks()
-    # Force Python garbage collection:
-    gc.collect()
+        cp.get_default_memory_pool().free_all_blocks()
+        cp.get_default_pinned_memory_pool().free_all_blocks()
+        # Force Python garbage collection:
+        gc.collect()

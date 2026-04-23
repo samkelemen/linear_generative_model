@@ -33,6 +33,7 @@ def validation_train(subject_id):
         gc.collect()
 
 
-SUBJECT_IDs = ["032301", "032304", "032307"]
-for subject_id in SUBJECT_IDs:
-    validation_train(subject_id)
+if __name__ == "__main__":
+    SUBJECT_IDs = ["032301", "032304", "032307"]
+    for subject_id in SUBJECT_IDs:
+        validation_train(subject_id)

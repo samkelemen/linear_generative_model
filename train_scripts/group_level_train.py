@@ -42,5 +42,6 @@ def train_group(subject_ids):
     cp.savetxt(f"{sl_dir}/rules", rules)
 
 
-subject_ids = [subject_id for subject_id in range(1, 51)]
-train_group(subject_ids)
+if __name__ == "__main__":
+    subject_ids = [subject_id for subject_id in range(1, 51)]
+    train_group(subject_ids)
