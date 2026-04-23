@@ -1,9 +1,7 @@
-import numpy as np
 import cupy as cp
 import gc
 import inout
-from sklearn.linear_model import LinearRegression
-from lin_gen_model import Subject
+from subject import Subject
 from transformations import symmetric_modification
 from inout import get_schaefer100_sc, get_schaefer100_fc
 
@@ -36,14 +34,13 @@ def train_group(subject_ids):
     # Force Python garbage collection:
     gc.collect()
 
-    a = cp.linalg.pinv(transformed_scs[:6555, :6555*30])
-
-    #rules = LinearRegression(fit_intercept=False).fit(transformed_scs.T.astype(np.float32), transformed_fcs.astype(np.float32))
+    rules = cp.linalg.pinv(X) @ y
 
     # Save the model
-    #sl_dir = "group_level_log10"
-    #inout.check_paths(sl_dir)
-    #np.savetxt(f"{sl_dir}/rules", rules)
+    sl_dir = "group_level_log10"
+    inout.check_paths(sl_dir)
+    cp.savetxt(f"{sl_dir}/rules", rules)
+
 
 subject_ids = [subject_id for subject_id in range(1, 51)]
 train_group(subject_ids)

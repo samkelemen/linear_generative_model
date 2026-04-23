@@ -2,7 +2,8 @@ import gc
 import cupy as cp
 import inout
 from inout import get_schaefer100_fc
-from lin_gen_model import Subject, binary_search_train
+from lin_gen_model import binary_search_train
+from subject import Subject
 from transformations import symmetric_modification
 
 
@@ -18,14 +19,18 @@ def train_subject(subject_id):
         sc = cp.loadtxt(f"sc_nulls/{subject_id}/null_X{null_num}")
         sc = inout.remove_medial_wall(sc)
         subject = Subject(subject_id, sc, fc, symmetric_modification)
-        rules, alpha = binary_search_train(subject.transformed_sc, subject.transformed_fc, max_iter=10)
+        rules, alpha = binary_search_train(
+            subject.transformed_sc, subject.transformed_fc, max_iter=10
+        )
 
         # Save the model
         sl_dir = f"rule_nulls/{subject_id}"
         inout.check_paths(sl_dir)
         cp.savetxt(f"{sl_dir}/null_rules{null_num}", rules)
 
-        print(f"Subject {subject_id}, null_num {null_num} finished training with alpha: {alpha}")
+        print(
+            f"Subject {subject_id}, null_num {null_num} finished training with alpha: {alpha}"
+        )
         print()
         gc.collect()
 

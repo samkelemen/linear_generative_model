@@ -2,7 +2,8 @@ import gc
 import cupy as cp
 import inout
 from inout import get_schaefer100_fc
-from lin_gen_model import Subject, binary_search_train
+from lin_gen_model import binary_search_train
+from subject import Subject
 from transformations import symmetric_modification
 
 
@@ -15,7 +16,9 @@ def train_subject(subject_id):
     # Load the data
     sc = cp.loadtxt(f"search_information_from_sc/search_information_{subject_id}.txt")
     subject = Subject(subject_id, sc, fc, symmetric_modification)
-    rules, alpha = binary_search_train(subject.transformed_sc, subject.transformed_fc, max_iter=10)
+    rules, alpha = binary_search_train(
+        subject.transformed_sc, subject.transformed_fc, max_iter=10
+    )
 
     # Save the model
     sl_dir = "subject_level_search_information/"

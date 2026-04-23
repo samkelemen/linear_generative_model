@@ -1,6 +1,8 @@
 import gc
 import cupy as cp
-from lin_gen_model import calc_alpha_grid, lasso_regression, Subject
+
+from lin_gen_model import calc_alpha_grid, lasso_regression
+from subject import Subject
 from transformations import symmetric_modification
 from train_functions import load_connectomes
 import inout
@@ -18,7 +20,9 @@ def validation_train(subject_id):
     print(f"Window = {time_steps}, alpha_grid = {alpha_grid}")
 
     for num, alpha in enumerate(alpha_grid):
-        rules = lasso_regression(subject.transformed_sc, subject.transformed_fc, alpha, max_iter=100)
+        rules = lasso_regression(
+            subject.transformed_sc, subject.transformed_fc, alpha, max_iter=100
+        )
         outdir = f"sc_density_sweeps/{time_steps}/"
         inout.check_paths(outdir)
         cp.savetxt(f"{outdir}rules_sub-{subject_id}_lambda-{num}", rules)
@@ -28,6 +32,7 @@ def validation_train(subject_id):
         # Force Python garbage collection:
         gc.collect()
 
-SUBJECT_IDs = ['032301', '032304', '032307']
+
+SUBJECT_IDs = ["032301", "032304", "032307"]
 for subject_id in SUBJECT_IDs:
     validation_train(subject_id)
